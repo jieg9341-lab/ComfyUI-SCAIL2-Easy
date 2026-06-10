@@ -1,0 +1,7 @@
+__pycache__/
+*.py[cod]
+*.bak
+*.bak.*
+.ipynb_checkpoints/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,5 @@
+imageio-ffmpeg
+pillow
+safetensors
+decord
+easydict
