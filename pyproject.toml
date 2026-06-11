@@ -1,0 +1,27 @@
+[project]
+name = "ComfyUI-SCAIL2-Easy"
+description = "Simplified ComfyUI nodes for SCAIL-2 video generation workflows."
+version = "1.0.0"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+dependencies = [
+    "imageio-ffmpeg",
+    "pillow",
+    "safetensors",
+    "decord",
+    "easydict",
+]
+classifiers = [
+    "Operating System :: OS Independent",
+    "Environment :: GPU :: NVIDIA CUDA",
+]
+
+[project.urls]
+Homepage = "https://github.com/jieg9341-lab/ComfyUI-SCAIL2-Easy"
+Documentation = "https://github.com/jieg9341-lab/ComfyUI-SCAIL2-Easy#readme"
+Repository = "https://github.com/jieg9341-lab/ComfyUI-SCAIL2-Easy"
+Issues = "https://github.com/jieg9341-lab/ComfyUI-SCAIL2-Easy/issues"
+
+[tool.comfy]
+PublisherId = "nkxx188"
+DisplayName = "ComfyUI-SCAIL2-Easy"
