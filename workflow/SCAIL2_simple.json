@@ -13,10 +13,10 @@
       ],
       "size": [
         300,
-        330
+        370
       ],
       "flags": {},
-      "order": 6,
+      "order": 0,
       "mode": 0,
       "inputs": [],
       "outputs": [
@@ -40,7 +40,7 @@
         "Node name for S&R": "LoadImage"
       },
       "widgets_values": [
-        "28a6d53279f443c89fd95ff8b0b1dd0e.png",
+        "54f5175088024794af0d5cce98ef2f4b.png",
         "image"
       ]
     },
@@ -49,11 +49,11 @@
       "type": "VHS_LoadVideo",
       "pos": [
         -310,
-        -230
+        -240
       ],
       "size": [
-        300,
-        822
+        290,
+        803
       ],
       "flags": {},
       "order": 7,
@@ -180,26 +180,41 @@
         "Node name for S&R": "VHS_LoadVideo"
       },
       "widgets_values": {
-        "video": "下载.mp4",
+        "video": "simple_00005-audio.mp4",
         "force_rate": 24,
         "custom_width": 0,
         "custom_height": 0,
         "frame_load_cap": 0,
         "skip_first_frames": 0,
         "select_every_nth": 1,
-        "format": "AnimateDiff"
+        "format": "AnimateDiff",
+        "videopreview": {
+          "hidden": false,
+          "paused": false,
+          "params": {
+            "filename": "simple_00005-audio.mp4",
+            "type": "input",
+            "format": "video/mp4",
+            "force_rate": 24,
+            "custom_width": 0,
+            "custom_height": 0,
+            "frame_load_cap": 0,
+            "skip_first_frames": 0,
+            "select_every_nth": 1
+          }
+        }
       }
     },
     {
       "id": 3,
       "type": "SCAIL2FitVideo",
       "pos": [
-        180,
+        190,
         140
       ],
       "size": [
-        250,
-        120
+        230,
+        118
       ],
       "flags": {},
       "order": 12,
@@ -244,7 +259,9 @@
         "Node name for S&R": "SCAIL2FitVideo"
       },
       "widgets_values": [
-        "512p"
+        "512p",
+        480,
+        864
       ]
     },
     {
@@ -255,8 +272,8 @@
         110
       ],
       "size": [
-        470,
-        190
+        440,
+        180
       ],
       "flags": {},
       "order": 4,
@@ -350,14 +367,14 @@
       "type": "WanChunkFeedForward",
       "pos": [
         170,
-        320
+        380
       ],
       "size": [
-        260,
+        240,
         90
       ],
       "flags": {},
-      "order": 11,
+      "order": 8,
       "mode": 0,
       "inputs": [
         {
@@ -388,14 +405,14 @@
       "type": "LoraLoaderModelOnly",
       "pos": [
         170,
-        480
+        520
       ],
       "size": [
-        320,
+        310,
         90
       ],
       "flags": {},
-      "order": 14,
+      "order": 13,
       "mode": 0,
       "inputs": [
         {
@@ -428,12 +445,12 @@
       "id": 13,
       "type": "ModelSamplingSD3",
       "pos": [
-        520,
-        350
+        530,
+        320
       ],
       "size": [
-        270,
-        80
+        260,
+        60
       ],
       "flags": {},
       "order": 16,
@@ -471,7 +488,7 @@
         480
       ],
       "size": [
-        270,
+        260,
         110
       ],
       "flags": {},
@@ -508,15 +525,15 @@
       "id": 15,
       "type": "KSamplerSelect",
       "pos": [
-        980,
-        -60
+        960,
+        -110
       ],
       "size": [
         260,
-        70
+        110
       ],
       "flags": {},
-      "order": 5,
+      "order": 3,
       "mode": 0,
       "inputs": [],
       "outputs": [
@@ -545,11 +562,11 @@
         -280
       ],
       "size": [
-        300,
-        140
+        280,
+        110
       ],
       "flags": {},
-      "order": 0,
+      "order": 6,
       "mode": 0,
       "inputs": [],
       "outputs": [
@@ -578,14 +595,14 @@
       "type": "CLIPTextEncode",
       "pos": [
         480,
-        -310
+        -360
       ],
       "size": [
         420,
         160
       ],
       "flags": {},
-      "order": 8,
+      "order": 10,
       "mode": 0,
       "inputs": [
         {
@@ -609,22 +626,22 @@
         "Node name for S&R": "CLIPTextEncode"
       },
       "widgets_values": [
-        "This woman is dancing"
+        "角色在跳舞"
       ]
     },
     {
       "id": 18,
       "type": "CLIPTextEncode",
       "pos": [
-        490,
-        -120
+        460,
+        -130
       ],
       "size": [
         420,
-        120
+        140
       ],
       "flags": {},
-      "order": 9,
+      "order": 11,
       "mode": 0,
       "inputs": [
         {
@@ -655,12 +672,12 @@
       "id": 19,
       "type": "VAELoader",
       "pos": [
-        950,
-        -320
+        960,
+        -350
       ],
       "size": [
-        270,
-        70
+        250,
+        110
       ],
       "flags": {},
       "order": 1,
@@ -688,12 +705,12 @@
       "id": 20,
       "type": "CLIPVisionLoader",
       "pos": [
-        950,
-        -220
+        960,
+        -230
       ],
       "size": [
         300,
-        80
+        110
       ],
       "flags": {},
       "order": 2,
@@ -725,11 +742,11 @@
         740
       ],
       "size": [
-        310,
-        130
+        330,
+        100
       ],
       "flags": {},
-      "order": 3,
+      "order": 5,
       "mode": 0,
       "inputs": [],
       "outputs": [
@@ -772,10 +789,10 @@
       ],
       "size": [
         260,
-        120
+        140
       ],
       "flags": {},
-      "order": 10,
+      "order": 9,
       "mode": 0,
       "inputs": [
         {
@@ -811,8 +828,8 @@
         940
       ],
       "size": [
-        280,
-        220
+        310,
+        170
       ],
       "flags": {},
       "order": 15,
@@ -869,11 +886,11 @@
         950
       ],
       "size": [
-        280,
-        220
+        270,
+        170
       ],
       "flags": {},
-      "order": 13,
+      "order": 14,
       "mode": 0,
       "inputs": [
         {
@@ -928,7 +945,7 @@
       ],
       "size": [
         420,
-        360
+        354
       ],
       "flags": {},
       "order": 18,
@@ -990,6 +1007,42 @@
           "shape": 7,
           "type": "SAM3_TRACK_DATA",
           "link": 18
+        },
+        {
+          "label": "高级参数",
+          "name": "advanced",
+          "type": "BOOLEAN",
+          "widget": {
+            "name": "advanced"
+          },
+          "link": null
+        },
+        {
+          "label": "最大帧数",
+          "name": "max_frames",
+          "type": "INT",
+          "widget": {
+            "name": "max_frames"
+          },
+          "link": null
+        },
+        {
+          "label": "每段帧数",
+          "name": "chunk_frames",
+          "type": "INT",
+          "widget": {
+            "name": "chunk_frames"
+          },
+          "link": null
+        },
+        {
+          "label": "重叠帧数",
+          "name": "overlap_frames",
+          "type": "INT",
+          "widget": {
+            "name": "overlap_frames"
+          },
+          "link": null
         }
       ],
       "outputs": [
@@ -1011,11 +1064,14 @@
         "Node name for S&R": "SCAIL2SimpleVideo"
       },
       "widgets_values": [
-        1,
+        562285136099323,
         "randomize",
         1,
         "replacement",
-        0
+        false,
+        0,
+        81,
+        5
       ]
     },
     {
@@ -1026,8 +1082,8 @@
         160
       ],
       "size": [
-        300,
-        838
+        330,
+        999
       ],
       "flags": {},
       "order": 19,
@@ -1154,7 +1210,20 @@
         "save_metadata": true,
         "trim_to_audio": false,
         "pingpong": false,
-        "save_output": true
+        "save_output": true,
+        "videopreview": {
+          "hidden": false,
+          "paused": false,
+          "params": {
+            "filename": "simple_00010-audio.mp4",
+            "subfolder": "SCAIL2",
+            "type": "output",
+            "format": "video/h264-mp4",
+            "frame_rate": 24,
+            "workflow": "simple_00010.png",
+            "fullpath": "/root/ComfyUI/output/SCAIL2/simple_00010-audio.mp4"
+          }
+        }
       }
     }
   ],
@@ -1429,10 +1498,10 @@
   "config": {},
   "extra": {
     "ds": {
-      "scale": 0.30072376575503734,
+      "scale": 0.5860255447032487,
       "offset": [
-        1457.6599541543599,
-        1027.7015894986068
+        671.3883307638275,
+        512.5040334424232
       ]
     },
     "frontendVersion": "1.45.15",

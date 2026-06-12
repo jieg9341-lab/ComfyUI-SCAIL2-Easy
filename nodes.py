@@ -9,7 +9,7 @@ import torch.nn.functional as F
 
 
 CATEGORY = "SCAIL-2/Simple"
-RESOLUTION_PRESETS = ("512p", "704p")
+RESOLUTION_PRESETS = ("512p", "704p", "custom")
 
 
 def _shape(value: Any) -> list[int]:
@@ -71,11 +71,14 @@ def _empty_cache():
     gc.collect()
 
 
-def _target_size_for_video(images: torch.Tensor, resolution: str) -> tuple[int, int]:
+def _target_size_for_video(images: torch.Tensor, resolution: str, custom_width: int = 832, custom_height: int = 480) -> tuple[int, int]:
     if images.ndim != 4:
         raise ValueError("video must be a ComfyUI IMAGE tensor.")
     height = int(images.shape[1])
     width = int(images.shape[2])
+    if resolution == "custom":
+        return _round_nearest_32(max(32, int(custom_width))), _round_nearest_32(max(32, int(custom_height)))
+
     target_short = 704 if resolution == "704p" else 512
     source_short = max(1, min(width, height))
     scale = target_short / source_short
@@ -253,7 +256,10 @@ class SCAIL2SimpleVideo:
                 "seed": ("INT", {"default": 1, "min": 0, "max": 0xffffffffffffffff}),
                 "cfg": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 20.0, "step": 0.1}),
                 "mode": (["replacement", "animation"], {"default": "replacement"}),
+                "advanced": ("BOOLEAN", {"default": False}),
                 "max_frames": ("INT", {"default": 0, "min": 0, "max": 100000, "step": 1}),
+                "chunk_frames": ("INT", {"default": 81, "min": 17, "max": 321, "step": 4}),
+                "overlap_frames": ("INT", {"default": 5, "min": 0, "max": 33, "step": 1}),
             },
             "optional": {
                 "driving_track_data": ("SAM3_TRACK_DATA",),
@@ -280,7 +286,10 @@ class SCAIL2SimpleVideo:
         seed: int,
         cfg: float,
         mode: str,
+        advanced: bool,
         max_frames: int,
+        chunk_frames: int = 81,
+        overlap_frames: int = 5,
         driving_track_data=None,
         reference_track_data=None,
     ):
@@ -314,12 +323,11 @@ class SCAIL2SimpleVideo:
 
         width, height = _infer_generation_size(pose_video)
         first_chunk_replacement_mode = mask_replacement_mode
-        chunk_frames = 81
-        overlap_frames = 5
         pose_strength = 1.0
-        chunk_frames = _wan_frame_count_cover(chunk_frames)
+        chunk_frames = _wan_frame_count_cover(max(17, int(chunk_frames)))
         first_length = chunk_frames
-        previous_frame_count = max(1, min(int(overlap_frames), 33))
+        requested_overlap = max(0, int(overlap_frames))
+        previous_frame_count = 0 if requested_overlap == 0 else max(1, min(_wan_frame_count_floor(requested_overlap), 33, max(1, chunk_frames - 4)))
         if chunk_frames <= previous_frame_count:
             raise ValueError("chunk_frames must be larger than overlap_frames.")
 
@@ -336,7 +344,7 @@ class SCAIL2SimpleVideo:
             remaining_from_anchor = max(1, total_frames - anchor_start)
             target_length = first_length if chunk_index == 0 else chunk_frames
             length = min(target_length, _wan_frame_count_floor(remaining_from_anchor))
-            if previous_frames is not None and length <= previous_frame_count:
+            if previous_frames is not None and previous_frame_count > 0 and length <= previous_frame_count:
                 break
 
             decoded, next_offset, chunk_summary = _run_native_scail_chunk(
@@ -384,7 +392,7 @@ class SCAIL2SimpleVideo:
             )
             chunk_summaries.append(chunk_summary)
 
-            previous_frames = decoded[-previous_frame_count:].detach().cpu()
+            previous_frames = decoded[-previous_frame_count:].detach().cpu() if previous_frame_count > 0 else None
             video_frame_offset = int(next_offset)
             chunk_index += 1
             del decoded, kept
@@ -421,6 +429,8 @@ class SCAIL2FitVideo:
             "required": {
                 "video": ("IMAGE",),
                 "resolution": (list(RESOLUTION_PRESETS), {"default": "512p"}),
+                "custom_width": ("INT", {"default": 832, "min": 32, "max": 4096, "step": 32}),
+                "custom_height": ("INT", {"default": 480, "min": 32, "max": 4096, "step": 32}),
             },
         }
 
@@ -429,11 +439,13 @@ class SCAIL2FitVideo:
     FUNCTION = "fit"
     CATEGORY = CATEGORY
 
-    def fit(self, video: torch.Tensor, resolution: str):
-        target_width, target_height = _target_size_for_video(video, resolution)
+    def fit(self, video: torch.Tensor, resolution: str, custom_width: int = 832, custom_height: int = 480):
+        target_width, target_height = _target_size_for_video(video, resolution, custom_width, custom_height)
         fitted = _resize_to_target(video, target_width, target_height)
         summary = {
             "resolution": resolution,
+            "custom_width": int(custom_width),
+            "custom_height": int(custom_height),
             "source": _shape(video),
             "target": _shape(fitted),
             "width": target_width,
