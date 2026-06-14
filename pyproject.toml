@@ -1,7 +1,7 @@
 [project]
 name = "ComfyUI-SCAIL2-Easy"
 description = "Simplified ComfyUI nodes for SCAIL-2 video generation workflows."
-version = "1.1.0"
+version = "1.1.1"
 license = { file = "LICENSE" }
 requires-python = ">=3.10"
 dependencies = [

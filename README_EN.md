@@ -2,26 +2,31 @@
 
 Chinese documentation: [README.md](README.md)
 
-A simplified ComfyUI helper plugin for SCAIL-2. This plugin does not replace ComfyUI's native SCAIL-2 implementation. It reuses native ComfyUI nodes and wraps the parts that are repetitive or easy to wire incorrectly:
+A simplified ComfyUI helper plugin for SCAIL-2. This plugin does not replace ComfyUI's native SCAIL-2 implementation. It reuses native ComfyUI support and wraps the parts that are repetitive or easy to wire incorrectly:
 
 - Fit input videos to valid SCAIL-2 dimensions
 - Hide the wiring differences between animation and replacement modes
 - Generate SCAIL-2 colored masks internally
 - Run CLIP vision encoding internally
-- Generate long videos with automatic 81-frame chunks and 5-frame overlap
+- Generate long videos with automatic chunks and overlap
+- Support `512p`, `704p`, and custom resolution
+- Support multi-reference Reference Packs
 - Output frames through VideoHelperSuite `VHS_VideoCombine`
 
 ## Nodes
 
-This plugin provides two nodes:
+This plugin mainly provides these nodes:
 
 - `SCAIL-2 Fit Video`
 - `SCAIL-2 Simple Video`
+- `SCAIL-2 Reference Pack`
+- `SCAIL-2 Reference SAM Builder`
 
-`SCAIL-2 Fit Video` has one parameter:
+`SCAIL-2 Fit Video` has one main parameter:
 
 - `512p`: scale the short side to 512, calculate the long side from the original aspect ratio, then align both dimensions to multiples of 32
 - `704p`: scale the short side to 704, calculate the long side from the original aspect ratio, then align both dimensions to multiples of 32
+- `custom`: expose `custom_width` and `custom_height`
 
 `SCAIL-2 Simple Video` is the main generation node. The main user-facing controls are:
 
@@ -30,12 +35,26 @@ This plugin provides two nodes:
 - `mode`
 - `max_frames`
 
+Advanced controls are hidden by default. They include chunk size, overlap frames, and long-video mode.
+
+`SCAIL-2 Reference Pack` organizes multi-reference inputs:
+
+- Up to 6 subjects
+- One main image for each subject
+- Up to 5 extra reference images
+- Optional scene image for animation background guidance
+
+For multi-subject packs, the subject main images are composed into one primary reference collage before being used by SCAIL-2. Extra reference images provide additional views, clothing details, story frames, or scene information.
+
+`SCAIL-2 Reference SAM Builder` is recommended for multi-reference workflows. For multi-subject or replacement mode, set `SAM3_VideoTrack.max_objects` high enough to cover all target people in the driving video.
+
 ## Included Workflow
 
-The default workflow is included here:
+The included workflows are:
 
 ```text
-workflow/SCAIL2_simple.json
+workflow/1. SCAIL2_simple.json
+workflow/2. SCAIL2_multi_ref.json
 ```
 
 ## Requirements
@@ -70,8 +89,11 @@ ComfyUI/
 │     ├─ README.md
 │     ├─ README_EN.md
 │     ├─ LICENSE
+│     ├─ web/
+│     │  └─ scail2_easy.js
 │     └─ workflow/
-│        └─ SCAIL2_simple.json
+│        ├─ 1. SCAIL2_simple.json
+│        └─ 2. SCAIL2_multi_ref.json
 └─ models/
    ├─ diffusion_models/
    │  └─ wan2.1_14B_SCAIL_2_fp8_scaled.safetensors
@@ -101,28 +123,32 @@ ComfyUI/custom_nodes/ComfyUI-SCAIL2-Easy/
 3. Import:
 
 ```text
-ComfyUI-SCAIL2-Easy/workflow/SCAIL2_simple.json
+ComfyUI-SCAIL2-Easy/workflow/1. SCAIL2_simple.json
+ComfyUI-SCAIL2-Easy/workflow/2. SCAIL2_multi_ref.json
 ```
 
 4. Load the reference image in `LoadImage`.
 
 5. Load the driving video in `VHS_LoadVideo`.
 
-6. Select the resolution in `SCAIL-2 Fit Video`:
+6. Select the resolution in `SCAIL-2 Fit Video`.
 
-```text
-512p
-704p
-```
-
-7. Select the mode in `SCAIL-2 Simple Video`:
-
-```text
-animation: motion transfer
-replacement: character replacement
-```
+7. Select the mode in `SCAIL-2 Simple Video`.
 
 8. Use `VHS_VideoCombine` to output the video.
+
+## Multi-Reference Usage
+
+Use `2. SCAIL2_multi_ref.json`:
+
+1. Set `subject_count` in `SCAIL-2 Reference Pack`.
+2. Connect one main image for each subject.
+3. Increase `reference_count` if you need extra views or details.
+4. Connect `scene_image` if you want background guidance.
+5. Check that `SAM3_VideoTrack.max_objects` covers the target people.
+6. Select `animation` or `replacement` in `SCAIL-2 Simple Video` and run.
+
+Start with a small number of reference images. Clear full-body subject images are usually more stable.
 
 ## Modes
 
@@ -134,18 +160,9 @@ Motion transfer mode. In simple terms:
 Make the person in the reference image perform the motion from the driving video.
 ```
 
-Internal behavior:
+This mode tends to preserve the body shape, outfit, and visual style of the reference image.
 
-- Does not use SAM masks
-- Keeps the reference image background
-- Uses the original reference image for CLIP vision
-- Runs every chunk in animation mode
-
-Useful when:
-
-- You want to animate a character from a still image
-- The driving video is only used as a motion source
-- You want to preserve the proportions, clothing, and visual context of the reference image
+If you use a Reference Pack, the subject main images are used in the primary reference collage. If `scene_image` is connected, the result will lean more toward that background.
 
 ### replacement
 
@@ -155,20 +172,7 @@ Character replacement mode. In simple terms:
 Replace the person in the driving video with the person from the reference image.
 ```
 
-Internal behavior:
-
-- Uses SAM3 driving and reference tracks
-- Calls native `SCAIL2ColoredMask` internally
-- Masks the reference person onto a black background
-- Uses the masked reference image for CLIP vision
-- Runs the first chunk in replacement mode
-- Runs extension chunks with previous frames as continuity anchors
-
-Useful when:
-
-- The driving video already contains a person performing the motion
-- You want to replace that person with the reference character
-- Multi-person scenes need identity correspondence
+This mode uses SAM3 track data and generates the colored masks required by SCAIL-2. It follows the position and proportion of the person in the driving video more closely.
 
 Users only need to change `SCAIL-2 Simple Video.mode`. No rewiring is needed when switching modes.
 
@@ -176,16 +180,9 @@ Users only need to change `SCAIL-2 Simple Video.mode`. No rewiring is needed whe
 
 `SCAIL-2 Simple Video` automatically chunks the driving video:
 
-- 81 frames per chunk
-- 5 shared history frames between adjacent chunks
-- Extension chunks drop their first 5 repeated frames before stitching
-- The final chunk is rounded down to a valid Wan frame count
-
-This follows the default SCAIL-2 idea:
-
 ```text
-segment_len = 81
-segment_overlap = 5
+chunk_frames = 81
+overlap_frames = 5
 ```
 
 For a short test:
