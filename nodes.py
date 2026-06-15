@@ -22,6 +22,7 @@ MAX_REFERENCE_SUBJECTS = 6
 MAX_LEGACY_REFERENCE_IMAGES_PER_SUBJECT = 6
 MAX_PREFIX_REFERENCE_IMAGES = 5
 MAX_MIXED_REFERENCE_IMAGES = 5
+MAX_STAGE_REFERENCE_SOURCE_HEIGHT = 2048
 SCAIL_COLOR_PALETTE = (
     (0.0, 0.0, 1.0),
     (1.0, 0.0, 0.0),
@@ -735,6 +736,26 @@ def _resize_mask_cover_like(mask: torch.Tensor, source_image: torch.Tensor, widt
     return _resize_image_exact(crop, target_width, target_height, mode="nearest")
 
 
+def _resize_stage_subject_to_height(
+    image: torch.Tensor,
+    mask: torch.Tensor | None,
+    target_height: int,
+) -> tuple[torch.Tensor, torch.Tensor | None]:
+    source_height = max(1, int(image.shape[1]))
+    source_width = max(1, int(image.shape[2]))
+    target_height = max(1, int(target_height))
+    target_width = max(1, int(round(source_width * (target_height / source_height))))
+    if source_height == target_height:
+        return image, _resize_mask_like(mask[:1], image[:1]) if mask is not None else None
+
+    resized_image = _resize_image_exact(image[:1], target_width, target_height, mode="bilinear")
+    resized_mask = None
+    if mask is not None:
+        mask_like_image = _resize_mask_like(mask[:1], image[:1])
+        resized_mask = _resize_image_exact(mask_like_image, target_width, target_height, mode="nearest")
+    return resized_image.contiguous(), resized_mask.contiguous() if resized_mask is not None else None
+
+
 def _alpha_from_mask(mask: torch.Tensor | None, image: torch.Tensor) -> torch.Tensor:
     if mask is None:
         return torch.ones((1, int(image.shape[1]), int(image.shape[2]), 1), device=image.device, dtype=image.dtype)
@@ -810,8 +831,8 @@ def _stage_row_profile(row_count: int, row_index: int, aspect: str) -> dict[str,
 
     if row_count == 2 and aspect == "portrait":
         profiles = [
-            {"base": 0.78, "max_h": 0.72, "row_w": 0.94, "overlap": 0.14},
-            {"base": 1.02, "max_h": 0.82, "row_w": 0.90, "overlap": 0.12},
+            {"base": 0.74, "max_h": 0.78, "row_w": 1.04, "overlap": 0.24},
+            {"base": 1.02, "max_h": 0.92, "row_w": 0.96, "overlap": 0.16},
         ]
     elif row_count == 2 and aspect == "square":
         profiles = [
@@ -1061,9 +1082,9 @@ def _compose_main_reference(
         mask_canvas = _solid_color_mask_like(canvas, (0.0, 0.0, 0.0))
         base_role = "black_background"
     else:
-        canvas = _resize_image_cover(first_image, width, height)
+        canvas = torch.ones((1, int(height), int(width), 3), device=first_image.device, dtype=first_image.dtype)
         mask_canvas = _solid_color_mask_like(canvas, (1.0, 1.0, 1.0))
-        base_role = "primary_reference_background"
+        base_role = "white_background"
 
     stage_entries: list[dict[str, Any]] = []
     for subject_position, subject in enumerate(subjects):
@@ -1084,6 +1105,17 @@ def _compose_main_reference(
                 "metrics": _subject_bbox_metrics(image, mask),
             }
         )
+
+    if len(stage_entries) > 1:
+        target_stage_height = min(
+            MAX_STAGE_REFERENCE_SOURCE_HEIGHT,
+            max(max(1, int(entry["image"].shape[1])) for entry in stage_entries),
+        )
+        for entry in stage_entries:
+            image, mask = _resize_stage_subject_to_height(entry["image"], entry["mask"], target_stage_height)
+            entry["image"] = image
+            entry["mask"] = mask
+            entry["metrics"] = _subject_bbox_metrics(image, mask)
 
     stage_specs, stage_scales = _layout_stage_entries(stage_entries, width, height)
     for entry, stage_spec, stage_scale in zip(stage_entries, stage_specs, stage_scales):
